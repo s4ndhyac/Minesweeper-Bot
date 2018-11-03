@@ -1,1 +1,1 @@
-# CS271P-Minesweeper
+# Minesweeper-Bot
