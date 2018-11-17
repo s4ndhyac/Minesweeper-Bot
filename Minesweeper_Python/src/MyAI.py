@@ -52,9 +52,9 @@ class MyAI(AI):
         for i in range(xPosBeg, xPosEnd + 1):
             for j in range(yPosBeg, yPosEnd + 1):
                 if self.cells[i][j].cell_state == CellState.COVERED:
-                    adj_c_cells.append(self.cells[i][j])
+                    adj_c_cells.append((i,j))
                 if self.cells[i][j].cell_state == CellState.FLAGGED:
-                    adj_f_cells.append(self.cells[i][j])
+                    adj_f_cells.append((i,j))
         return (adj_c_cells, adj_f_cells)
 
     def decideAction(self):
@@ -92,22 +92,22 @@ class MyAI(AI):
         adjFlaggedCellsNum = len(adjFlaggedCells)
         cellMineProb = 1 if number == -1 else self.getMineProbability(number, adjCellsNum)
 
-        for cell in adjCells:
-            self.cells[cell.xPos][cell.yPos].mine_probability = cellMineProb
-            if self.cells[cell.xPos][cell.yPos] not in self.exploredCells:
-                self.exploredCells.append(self.cells[cell.xPos][cell.yPos])
+        for xPos,yPos in adjCells:
+            self.cells[xPos][yPos].mine_probability = cellMineProb
+            if self.cells[xPos][yPos] not in self.exploredCells:
+                self.exploredCells.append(self.cells[xPos][yPos])
             if number == 0:
-                if self.cells[cell.xPos][cell.yPos] not in self.safeCells:
-                    self.cells[cell.xPos][cell.yPos].isSafe = True
-                    self.safeCells.append(self.cells[cell.xPos][cell.yPos])
+                if self.cells[xPos][yPos] not in self.safeCells:
+                    self.cells[xPos][yPos].isSafe = True
+                    self.safeCells.append(self.cells[xPos][yPos])
             elif number - adjFlaggedCellsNum == adjCellsNum:
-                if not self.cells[cell.xPos][cell.yPos].isMine:
-                    self.cells[cell.xPos][cell.yPos].isMine = True
+                if not self.cells[xPos][yPos].isMine:
+                    self.cells[xPos][yPos].isMine = True
                     self.minesRemaining = self.minesRemaining - 1
             elif number == adjFlaggedCellsNum:
-                if self.cells[cell.xPos][cell.yPos] not in self.safeCells:
-                    self.cells[cell.xPos][cell.yPos].isSafe = True
-                    self.safeCells.append(self.cells[cell.xPos][cell.yPos])
+                if self.cells[xPos][yPos] not in self.safeCells:
+                    self.cells[xPos][yPos].isSafe = True
+                    self.safeCells.append(self.cells[xPos][yPos])
 
         if self.safeCells and len(self.safeCells) > 0:
             for cell in self.safeCells:
@@ -124,9 +124,9 @@ class MyAI(AI):
                     cellAdjFlaggedNum = len(cellAdjFlagged)
                     cellAdjNotUncoveredCellsNum = len(cellAdjNotUncoveredCells)
                     if cell.percept - cellAdjFlaggedNum == cellAdjNotUncoveredCellsNum:
-                        for c in cellAdjNotUncoveredCells:
-                            if not self.cells[c.xPos][c.yPos].isMine:
-                                self.cells[c.xPos][c.yPos].isMine = True
+                        for xPos,yPos in cellAdjNotUncoveredCells:
+                            if not self.cells[xPos][yPos].isMine:
+                                self.cells[xPos][yPos].isMine = True
                                 self.minesRemaining = self.minesRemaining - 1
         for cellRow in self.cells:
             for cell in cellRow:
@@ -142,11 +142,11 @@ class MyAI(AI):
                     cellAdjFlaggedNum = len(cellAdjFlagged)
                     cellAdjNotUncoveredCellsNum = len(cellAdjNotUncoveredCells)
                     if cell.percept == cellAdjFlaggedNum:
-                        for c in cellAdjNotUncoveredCells:
-                            if self.cells[c.xPos][c.yPos] not in self.safeCells:
-                                self.cells[c.xPos][c.yPos].isSafe = True
+                        for xPos,yPos in cellAdjNotUncoveredCells:
+                            if self.cells[xPos][yPos] not in self.safeCells:
+                                self.cells[xPos][yPos].isSafe = True
                                 self.safeCells.append(
-                                    self.cells[c.xPos][c.yPos])
+                                    self.cells[xPos][yPos])
         if self.safeCells and len(self.safeCells) > 0:
             for cell in self.safeCells:
                 if self.cells[cell.xPos][cell.yPos].cell_state == CellState.COVERED:
