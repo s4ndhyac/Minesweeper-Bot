@@ -30,7 +30,7 @@ class MyAI(AI):
         for i in range(rowDimension):
             row = []
             for j in range(colDimension):
-                cell = Cell(CellState.NOTUNCOVERED, None,
+                cell = Cell(CellState.COVERED, None,
                             initialMineProbability, i, j)
                 row.append(cell)
             self.cells.append(row)
@@ -47,7 +47,7 @@ class MyAI(AI):
         yPosEnd = yPos + 1 if yPos + 1 <= colDimension - 1 else yPos
         for i in range(xPosBeg, xPosEnd + 1):
             for j in range(yPosBeg, yPosEnd + 1):
-                if self.cells[i][j].cell_state == CellState.NOTUNCOVERED:
+                if self.cells[i][j].cell_state == CellState.COVERED:
                     adjCells.append(self.cells[i][j])
         return adjCells
 
@@ -113,7 +113,7 @@ class MyAI(AI):
                     self.safeCells.append(self.cells[cell.xPos][cell.yPos])
         if self.safeCells and len(self.safeCells) > 0:
             for cell in self.safeCells:
-                if self.cells[cell.xPos][cell.yPos].cell_state == CellState.NOTUNCOVERED:
+                if self.cells[cell.xPos][cell.yPos].cell_state == CellState.COVERED:
                     self.lastX = cell.xPos
                     self.lastY = cell.yPos
                     return Action(AI.Action.UNCOVER, cell.xPos, cell.yPos)
@@ -133,7 +133,7 @@ class MyAI(AI):
                                 self.minesRemaining = self.minesRemaining - 1
         for cellRow in self.cells:
             for cell in cellRow:
-                if cell.cell_state == CellState.NOTUNCOVERED and cell.isMine:
+                if cell.cell_state == CellState.COVERED and cell.isMine:
                     self.lastX = cell.xPos
                     self.lastY = cell.yPos
                     return Action(AI.Action.FLAG, cell.xPos, cell.yPos)
@@ -154,7 +154,7 @@ class MyAI(AI):
                                     self.cells[c.xPos][c.yPos])
         if self.safeCells and len(self.safeCells) > 0:
             for cell in self.safeCells:
-                if self.cells[cell.xPos][cell.yPos].cell_state == CellState.NOTUNCOVERED:
+                if self.cells[cell.xPos][cell.yPos].cell_state == CellState.COVERED:
                     self.lastX = cell.xPos
                     self.lastY = cell.yPos
                     return Action(AI.Action.UNCOVER, cell.xPos, cell.yPos)
