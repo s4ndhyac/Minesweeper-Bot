@@ -39,8 +39,12 @@ class MyAI(AI):
         self.lastX = startX
         self.lastY = startY
 
-    def getAdjacentAndNotUncoveredCells(self, xPos, yPos, rowDimension, colDimension):
-        adjCells = []
+    def get_adj_cells(self, xPos, yPos, rowDimension, colDimension):
+        ''' returns the list of adjacent covered and flagged cells
+            as a list of Cell class objects'''
+
+        adj_c_cells = []
+        adj_f_cells = []
         xPosBeg = xPos - 1 if xPos - 1 >= 0 else xPos
         xPosEnd = xPos + 1 if xPos + 1 <= rowDimension - 1 else xPos
         yPosBeg = yPos - 1 if yPos - 1 >= 0 else yPos
@@ -48,20 +52,10 @@ class MyAI(AI):
         for i in range(xPosBeg, xPosEnd + 1):
             for j in range(yPosBeg, yPosEnd + 1):
                 if self.cells[i][j].cell_state == CellState.COVERED:
-                    adjCells.append(self.cells[i][j])
-        return adjCells
-
-    def getAdjacentAndFlaggedCells(self, xPos, yPos, rowDimension, colDimension):
-        adjCells = []
-        xPosBeg = xPos - 1 if xPos - 1 >= 0 else xPos
-        xPosEnd = xPos + 1 if xPos + 1 <= rowDimension - 1 else xPos
-        yPosBeg = yPos - 1 if yPos - 1 >= 0 else yPos
-        yPosEnd = yPos + 1 if yPos + 1 <= colDimension - 1 else yPos
-        for i in range(xPosBeg, xPosEnd + 1):
-            for j in range(yPosBeg, yPosEnd + 1):
+                    adj_c_cells.append(self.cells[i][j])
                 if self.cells[i][j].cell_state == CellState.FLAGGED:
-                    adjCells.append(self.cells[i][j])
-        return adjCells
+                    adj_f_cells.append(self.cells[i][j])
+        return (adj_c_cells, adj_f_cells)
 
     def decideAction(self):
         minProb = 1.1
@@ -75,27 +69,30 @@ class MyAI(AI):
                         self.lastY = j
         return Action(AI.Action.UNCOVER, self.lastX, self.lastY)
 
-    def getMineProbability(self, noOfMinesInAdjacentAndNotUncovered, adjacentAndNotUncoveredCells):
-        return noOfMinesInAdjacentAndNotUncovered/adjacentAndNotUncoveredCells
+    def getMineProbability(self, mines, cells):
+        ''' mines --> No of mines in adjacent covered cells
+            cells --> No of adjacent covered cells '''
+        if cells > 0:
+            return mines/cells
 
     def getAction(self, number: int) -> "Action Object":
+
         self.cells[self.lastX][self.lastY].percept = number
         if number == -1:
             self.cells[self.lastX][self.lastY].cell_state = CellState.FLAGGED
         else:
             self.cells[self.lastX][self.lastY].cell_state = CellState.UNCOVERED
+
         if self.cells[self.lastX][self.lastY] not in self.exploredCells:
             self.exploredCells.append(self.cells[self.lastX][self.lastY])
-        adjCells = self.getAdjacentAndNotUncoveredCells(
+
+        adjCells, adjFlaggedCells = self.get_adj_cells(
             self.lastX, self.lastY, self.rowDimension, self.colDimension)
         adjCellsNum = len(adjCells)
-        adjFlaggedCells = self.getAdjacentAndFlaggedCells(
-            self.lastX, self.lastY, self.rowDimension, self.colDimension)
         adjFlaggedCellsNum = len(adjFlaggedCells)
+        cellMineProb = 1 if number == -1 else self.getMineProbability(number, adjCellsNum)
+
         for cell in adjCells:
-            cellMineProb = 1 if number == - \
-                1 else self.getMineProbability(number, adjCellsNum)
-            cell.mine_probability = cellMineProb
             self.cells[cell.xPos][cell.yPos].mine_probability = cellMineProb
             if self.cells[cell.xPos][cell.yPos] not in self.exploredCells:
                 self.exploredCells.append(self.cells[cell.xPos][cell.yPos])
@@ -111,18 +108,18 @@ class MyAI(AI):
                 if self.cells[cell.xPos][cell.yPos] not in self.safeCells:
                     self.cells[cell.xPos][cell.yPos].isSafe = True
                     self.safeCells.append(self.cells[cell.xPos][cell.yPos])
+
         if self.safeCells and len(self.safeCells) > 0:
             for cell in self.safeCells:
                 if self.cells[cell.xPos][cell.yPos].cell_state == CellState.COVERED:
                     self.lastX = cell.xPos
                     self.lastY = cell.yPos
                     return Action(AI.Action.UNCOVER, cell.xPos, cell.yPos)
+                
         for cellRow in self.cells:
             for cell in cellRow:
                 if cell.cell_state == CellState.UNCOVERED and cell.percept > 0:
-                    cellAdjNotUncoveredCells = self.getAdjacentAndNotUncoveredCells(
-                        cell.xPos, cell.yPos, self.rowDimension, self.colDimension)
-                    cellAdjFlagged = self.getAdjacentAndFlaggedCells(
+                    cellAdjNotUncoveredCells, cellAdjFlagged = self.get_adj_cells(
                         cell.xPos, cell.yPos, self.rowDimension, self.colDimension)
                     cellAdjFlaggedNum = len(cellAdjFlagged)
                     cellAdjNotUncoveredCellsNum = len(cellAdjNotUncoveredCells)
@@ -140,9 +137,7 @@ class MyAI(AI):
         for cellRow in self.cells:
             for cell in cellRow:
                 if cell.cell_state == CellState.UNCOVERED and cell.percept > 0:
-                    cellAdjNotUncoveredCells = self.getAdjacentAndNotUncoveredCells(
-                        cell.xPos, cell.yPos, self.rowDimension, self.colDimension)
-                    cellAdjFlagged = self.getAdjacentAndFlaggedCells(
+                    cellAdjNotUncoveredCells, cellAdjFlagged = self.get_adj_cells(
                         cell.xPos, cell.yPos, self.rowDimension, self.colDimension)
                     cellAdjFlaggedNum = len(cellAdjFlagged)
                     cellAdjNotUncoveredCellsNum = len(cellAdjNotUncoveredCells)
