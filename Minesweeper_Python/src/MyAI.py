@@ -11,7 +11,7 @@
 #
 #				- DO NOT MAKE CHANGES TO THIS FILE.
 # ==============================CS-199==================================
-
+import sys
 from AI import AI
 from Action import Action
 from Cell import Cell
@@ -30,7 +30,7 @@ class MyAI(AI):
         for i in range(rowDimension):
             row = []
             for j in range(colDimension):
-                cell = Cell(CellState.NOTUNCOVERED, None,
+                cell = Cell(CellState.COVERED, None,
                             initialMineProbability, i, j)
                 row.append(cell)
             self.cells.append(row)
@@ -38,7 +38,10 @@ class MyAI(AI):
         self.lastX = startX
         self.lastY = startY
 
-    def getAdjacentAndNotUncoveredCells(self, xPos, yPos, rowDimension, colDimension):
+    def get_Ccells(self, xPos, yPos, rowDimension, colDimension):
+        ''' 
+        returns the covered adjacent cells as a list of Cell class objects
+        '''
         adjCells = []
         xPosBeg = xPos - 1 if xPos - 1 >= 0 else xPos
         xPosEnd = xPos + 1 if xPos + 1 <= rowDimension - 1 else xPos
@@ -62,28 +65,35 @@ class MyAI(AI):
                         self.lastY = j
         return Action(AI.Action.UNCOVER, self.lastX, self.lastY)
 
-    def getMineProbability(self, noOfMinesInAdjacentAndNotUncovered, adjacentAndNotUncoveredCells):
-        return noOfMinesInAdjacentAndNotUncovered/adjacentAndNotUncoveredCells
+    def getMineProbability(self, mines, cells):
+        ''' 
+        mines --> No of mines in Adjacent and covered cells
+        cells --> adjacent and covered cells
+        returns the mine probability
+        '''
+        if cells > 0:
+            return mines/cells
 
     def getAction(self, number: int) -> "Action Object":
         #self.cells[self.lastX][self.lastY].percept = number
         self.cells[self.lastX][self.lastY].cell_state = CellState.UNCOVERED
+
         if self.cells[self.lastX][self.lastY] not in self.exploredCells:
             self.exploredCells.append(self.cells[self.lastX][self.lastY])
-        adjCells = self.getAdjacentAndNotUncoveredCells(
+        adjCells = self.get_Ccells(
             self.lastX, self.lastY, self.rowDimension, self.colDimension)
+        cellMineProb = self.getMineProbability(number, len(adjCells))
+
         for cell in adjCells:
-            cellMineProb = self.getMineProbability(number, len(adjCells))
-            cell.mine_probability = cellMineProb
             self.cells[cell.xPos][cell.yPos].mine_probability = cellMineProb
             if self.cells[cell.xPos][cell.yPos] not in self.exploredCells:
                 self.exploredCells.append(self.cells[cell.xPos][cell.yPos])
+
         if self.cellsRemaining > len(self.exploredCells):
             mineProbRemaining = self.getMineProbability(
                 self.minesRemaining - number, self.cellsRemaining - len(self.exploredCells))
             for cellRow in self.cells:
                 for cell in cellRow:
                     if cell not in self.exploredCells and cell not in adjCells:
-                        cell.mine_probability = mineProbRemaining
                         self.cells[cell.xPos][cell.yPos].mine_probability = mineProbRemaining
         return self.decideAction()
