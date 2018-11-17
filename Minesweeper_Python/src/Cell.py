@@ -8,3 +8,5 @@ class Cell:
         self.mine_probability = mine_probability
         self.xPos = xPos
         self.yPos = yPos
+        self.isSafe = False
+        self.isMine = False
