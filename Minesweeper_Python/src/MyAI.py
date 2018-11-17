@@ -90,7 +90,7 @@ class MyAI(AI):
             self.lastX, self.lastY, self.rowDimension, self.colDimension)
         adjCellsNum = len(adjCells)
         adjFlaggedCells = self.getAdjacentAndFlaggedCells(
-            self.lastX, self.lastX, self.rowDimension, self.colDimension)
+            self.lastX, self.lastY, self.rowDimension, self.colDimension)
         adjFlaggedCellsNum = len(adjFlaggedCells)
         for cell in adjCells:
             cellMineProb = 1 if number == - \
