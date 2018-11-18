@@ -83,8 +83,8 @@ class MyAI(AI):
         else:
             self.cells[self.lastX][self.lastY].cell_state = CellState.UNCOVERED
 
-        if self.cells[self.lastX][self.lastY] not in self.exploredCells:
-            self.exploredCells.append(self.cells[self.lastX][self.lastY])
+        if (self.lastX,self.lastY) not in self.exploredCells:
+            self.exploredCells.append((self.lastX,self.lastY))
 
         adjCells, adjFlaggedCells = self.get_adj_cells(
             self.lastX, self.lastY, self.rowDimension, self.colDimension)
@@ -94,8 +94,8 @@ class MyAI(AI):
 
         for xPos,yPos in adjCells:
             self.cells[xPos][yPos].mine_probability = cellMineProb
-            if self.cells[xPos][yPos] not in self.exploredCells:
-                self.exploredCells.append(self.cells[xPos][yPos])
+            if (xPos,yPos) not in self.exploredCells:
+                self.exploredCells.append((xPos,yPos))
             if number == 0:
                 if self.cells[xPos][yPos] not in self.safeCells:
                     self.cells[xPos][yPos].isSafe = True
@@ -153,13 +153,15 @@ class MyAI(AI):
                     self.lastX = cell.xPos
                     self.lastY = cell.yPos
                     return Action(AI.Action.UNCOVER, cell.xPos, cell.yPos)
+
         if self.cellsRemaining > len(self.exploredCells) and self.minesRemaining > number:
             currMinePercept = 0 if number == -1 else number
             mineProbRemaining = self.getMineProbability(
                 self.minesRemaining - currMinePercept, self.cellsRemaining - len(self.exploredCells))
-            for cellRow in self.cells:
-                for cell in cellRow:
-                    if cell not in self.exploredCells and cell not in adjCells and cell not in adjFlaggedCells:
+
+            for xPos in range(self.rowDimension):
+                for yPos in range(self.colDimension):
+                    if (xPos,yPos) not in self.exploredCells and (xPos,yPos) not in adjCells and (xPos,yPos) not in adjFlaggedCells:
                         cell.mine_probability = mineProbRemaining
-                        self.cells[cell.xPos][cell.yPos].mine_probability = mineProbRemaining
+                        self.cells[xPos][yPos].mine_probability = mineProbRemaining
         return self.decideAction()
