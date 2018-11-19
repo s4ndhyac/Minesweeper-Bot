@@ -96,7 +96,7 @@ class MyAI(AI):
             self.cells[xPos][yPos].mine_probability = cellMineProb
             if (xPos,yPos) not in self.exploredCells:
                 self.exploredCells.append((xPos,yPos))
-            if number == 0:
+            if number == 0 or number == adjFlaggedCellsNum:
                 if (xPos,yPos) not in self.safeCells:
                     self.cells[xPos][yPos].isSafe = True
                     self.safeCells.append((xPos,yPos))
@@ -104,12 +104,8 @@ class MyAI(AI):
                 if not self.cells[xPos][yPos].isMine:
                     self.cells[xPos][yPos].isMine = True
                     self.minesRemaining = self.minesRemaining - 1
-            elif number == adjFlaggedCellsNum:
-                if (xPos,yPos) not in self.safeCells:
-                    self.cells[xPos][yPos].isSafe = True
-                    self.safeCells.append((xPos,yPos))
 
-        if self.safeCells and len(self.safeCells) > 0:
+        if self.safeCells and len(self.safeCells):
             for (xPos,yPos) in self.safeCells:
                 if self.cells[xPos][yPos].cell_state == CellState.COVERED:
                     self.lastX = xPos
@@ -158,7 +154,6 @@ class MyAI(AI):
             currMinePercept = 0 if number == -1 else number
             mineProbRemaining = self.getMineProbability(
                 self.minesRemaining - currMinePercept, self.cellsRemaining - len(self.exploredCells))
-
             for xPos in range(self.rowDimension):
                 for yPos in range(self.colDimension):
                     if (xPos,yPos) not in self.exploredCells and (xPos,yPos) not in adjCells and (xPos,yPos) not in adjFlaggedCells:
