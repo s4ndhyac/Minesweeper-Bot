@@ -14,9 +14,23 @@
 
 from AI import AI
 from Action import Action
-from Cell import Cell
-import CellState
+from enum import Enum
 
+class Cell:
+    def __init__(self, cell_state, percept, mine_probability, xPos, yPos):
+        self.cell_state = cell_state
+        self.percept = percept
+        self.mine_probability = mine_probability
+        self.xPos = xPos
+        self.yPos = yPos
+        self.isSafe = False
+        self.isMine = False
+
+class CellState(Enum):
+    COVERED = 0
+    UNCOVERED = 1
+    FLAGGED = 2
+    UNFLAGGED = 3
 
 class MyAI(AI):
 
