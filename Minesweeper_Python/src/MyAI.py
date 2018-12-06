@@ -34,7 +34,7 @@ class CellState(Enum):
 
 class MyAI(AI):
 
-    def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
+    def __init__(self, rowDimension, colDimension, totalMines, startY, startX):
         self.rowDimension = rowDimension
         self.colDimension = colDimension
         self.cellsRemaining = rowDimension * colDimension
@@ -81,7 +81,7 @@ class MyAI(AI):
                         minProb = mineProbabilty
                         self.lastX = i
                         self.lastY = j
-        return Action(AI.Action.UNCOVER, self.lastX, self.lastY)
+        return Action(AI.Action.UNCOVER, self.lastY, self.lastX)
 
     def getMineProbability(self, mines, cells):
         ''' mines --> No of mines in adjacent covered cells
@@ -124,7 +124,7 @@ class MyAI(AI):
                 if self.cells[xPos][yPos].cell_state == CellState.COVERED:
                     self.lastX = xPos
                     self.lastY = yPos
-                    return Action(AI.Action.UNCOVER, xPos, yPos)
+                    return Action(AI.Action.UNCOVER, yPos, xPos)
                 
         for cellRow in self.cells:
             for cell in cellRow:
@@ -143,7 +143,7 @@ class MyAI(AI):
                 if cell.cell_state == CellState.COVERED and cell.isMine:
                     self.lastX = cell.xPos
                     self.lastY = cell.yPos
-                    return Action(AI.Action.FLAG, cell.xPos, cell.yPos)
+                    return Action(AI.Action.FLAG, cell.yPos, cell.xPos)
         for cellRow in self.cells:
             for cell in cellRow:
                 if cell.cell_state == CellState.UNCOVERED and cell.percept > 0:
@@ -162,7 +162,7 @@ class MyAI(AI):
                 if self.cells[xPos][yPos].cell_state == CellState.COVERED:
                     self.lastX = xPos
                     self.lastY = yPos
-                    return Action(AI.Action.UNCOVER, xPos, yPos)
+                    return Action(AI.Action.UNCOVER, yPos, xPos)
 
         if self.cellsRemaining > len(self.exploredCells) and self.minesRemaining > number:
             currMinePercept = 0 if number == -1 else number
