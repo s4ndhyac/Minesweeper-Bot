@@ -86,6 +86,7 @@ class MyAI(AI):
             as a list of Cell class objects'''
         adj_c_cells = []
         adj_f_cells = []
+        adj_u_cells = []
         xPosBeg = xPos - 1 if xPos - 1 >= 0 else xPos
         xPosEnd = xPos + 1 if xPos + 1 <= rowDimension - 1 else xPos
         yPosBeg = yPos - 1 if yPos - 1 >= 0 else yPos
@@ -96,7 +97,12 @@ class MyAI(AI):
                     adj_c_cells.append((i, j))
                 if cells[i][j].cell_state == CellState.FLAGGED:
                     adj_f_cells.append((i, j))
-        return (adj_c_cells, adj_f_cells)
+                if cells[i][j].cell_state == CellState.UNCOVERED:
+                    if i == xPos and j == yPos:
+                        continue
+                    else:
+                        adj_u_cells.append((i, j))
+        return (adj_c_cells, adj_f_cells, adj_u_cells)
 
     def decideActionByProbability(self):
         minProb = 1.1
@@ -180,8 +186,8 @@ class MyAI(AI):
                 if cell.isMine == True:
                     flagCount = flagCount + 1
                 if cell.cell_state == CellState.UNCOVERED:
-                    adjCoveredCells, adjFlaggedCells = self.get_adj_cells(self.cellsCopy,
-                                                                          cell.xPos, cell.yPos, self.rowDimension, self.colDimension)
+                    adjCoveredCells, adjFlaggedCells, adjUncoveredCells = self.get_adj_cells(self.cellsCopy,
+                                                                                             cell.xPos, cell.yPos, self.rowDimension, self.colDimension)
                     if len(adjFlaggedCells) > cell.percept:
                         return
                     if len(cell.adjCells) - cell.percept < len(adjCoveredCells):
@@ -210,6 +216,52 @@ class MyAI(AI):
         self.backtrackingAlgorithm(borderCells, position + 1)
         self.cellsCopy[bl[0]][bl[1]].isSafe = False
 
+    def solveInPairs(self):
+        changed = False
+        # For each open cell (x,y)
+        for cellRow in self.cells:
+            for cell in cellRow:
+                if cell.cell_state == CellState.UNCOVERED:
+                    percept = cell.percept
+                    adjCovered, adjFlagged, adjUncovered = self.get_adj_cells(self.cells,
+                                                                              cell.xPos, cell.yPos, self.rowDimension, self.colDimension)
+                    if len(adjCovered) == 0:
+                        continue
+                    percept = percept - len(adjFlagged)
+                    # for each neighbour which is open
+                    for x, y in adjUncovered:
+                        if x == cell.xPos or y == cell.yPos:
+                            adjPercept = self.cells[x][y].percept
+                            # get neighbours to adj cell
+                            nAdjCovered, nAdjFlagged, nAdjUncovered = self.get_adj_cells(self.cells,
+                                                                                          x, y, self.rowDimension, self.colDimension)
+                            adjPercept = adjPercept - len(nAdjFlagged)
+                            # check if each unopened neighbour of first cell is a neighbour of 2nd cell
+                            for c in adjCovered:
+                                if c not in nAdjCovered:
+                                    break
+                            # Open all cells unique to the neighbour
+                            if adjPercept == percept:
+                                for uc in nAdjCovered:
+                                    if uc not in adjCovered:
+                                        self.cells[uc[0]][uc[1]].isSafe = True
+                                        self.safeCells.append(uc)
+                                        changed = True
+                                        self.lastX = uc[0]
+                                        self.lastY = uc[1]
+                                        return Action(AI.Action.UNCOVER, uc[1], uc[0])
+                            # elif adjPercept - percept == len(nAdjFlagged) - len(adjFlagged):
+                            #     # Flag all cells unique to 2nd cell
+                            #     for uc in nAdjCovered:
+                            #         if uc not in adjCovered:
+                            #             self.cells[uc[0]][uc[1]].isMine = True
+                            #             self.minesRemaining = self.minesRemaining - 1
+                            #             changed = True
+                            #             self.lastX = uc[0]
+                            #             self.lastY = uc[1]
+                            #             return Action(AI.Action.FLAG, uc[1], uc[0])
+        return None
+
     def getAction(self, number: int) -> "Action Object":
         self.cells[self.lastX][self.lastY].percept = number
         if number == -1:
@@ -220,8 +272,8 @@ class MyAI(AI):
         if (self.lastX, self.lastY) not in self.exploredCells:
             self.exploredCells.append((self.lastX, self.lastY))
 
-        adjCells, adjFlaggedCells = self.get_adj_cells(self.cells,
-                                                       self.lastX, self.lastY, self.rowDimension, self.colDimension)
+        adjCells, adjFlaggedCells, adfUncoveredCells = self.get_adj_cells(self.cells,
+                                                                          self.lastX, self.lastY, self.rowDimension, self.colDimension)
         adjCellsNum = len(adjCells)
         adjFlaggedCellsNum = len(adjFlaggedCells)
         cellMineProb = 1 if number == - \
@@ -250,8 +302,8 @@ class MyAI(AI):
         for cellRow in self.cells:
             for cell in cellRow:
                 if cell.cell_state == CellState.UNCOVERED and cell.percept > 0:
-                    cellAdjCoveredCells, cellAdjFlagged = self.get_adj_cells(self.cells,
-                                                                             cell.xPos, cell.yPos, self.rowDimension, self.colDimension)
+                    cellAdjCoveredCells, cellAdjFlagged, cellAdjUncovered = self.get_adj_cells(self.cells,
+                                                                                               cell.xPos, cell.yPos, self.rowDimension, self.colDimension)
                     cellAdjFlaggedNum = len(cellAdjFlagged)
                     cellAdjCoveredCellsNum = len(cellAdjCoveredCells)
                     if cell.percept - cellAdjFlaggedNum == cellAdjCoveredCellsNum:
@@ -269,8 +321,8 @@ class MyAI(AI):
         for cellRow in self.cells:
             for cell in cellRow:
                 if cell.cell_state == CellState.UNCOVERED and cell.percept > 0:
-                    cellAdjCoveredCells, cellAdjFlagged = self.get_adj_cells(self.cells,
-                                                                             cell.xPos, cell.yPos, self.rowDimension, self.colDimension)
+                    cellAdjCoveredCells, cellAdjFlagged, cellAdjUncovered = self.get_adj_cells(self.cells,
+                                                                                               cell.xPos, cell.yPos, self.rowDimension, self.colDimension)
                     cellAdjFlaggedNum = len(cellAdjFlagged)
                     cellAdjCoveredCellsNum = len(cellAdjCoveredCells)
                     if cell.percept == cellAdjFlaggedNum:
@@ -286,6 +338,11 @@ class MyAI(AI):
                     self.lastY = yPos
                     return Action(AI.Action.UNCOVER, yPos, xPos)
 
+        action = self.solveInPairs()
+        if action:
+            print("In pair: " + str(action.getX()) + " " + str(action.getY()))
+            return action
+
         boundaryList, coveredList = self.getBoundaryCells()
         self.backtrackOverAllOrOnlyBoundary = False
         if len(coveredList) - len(boundaryList) > 8:
@@ -294,41 +351,55 @@ class MyAI(AI):
             boundaryList = coveredList
         if len(boundaryList) > 0:
             isolatedBoundarys = self.getIsolatedBoundarys(boundaryList)
-            smallestIsolatedBoundary = self.getSmallestIsolatedBoundary(
-                isolatedBoundarys)
-            # isolatedBoundarys.sort(key=len)
-            if len(smallestIsolatedBoundary) < 8:
-                self.cellsCopy = copy.deepcopy(self.cells)
-                self.backtrackingSolution = []
-                self.backtrackingAlgorithm(smallestIsolatedBoundary, 0)
-                if self.backtrackingSolution and len(self.backtrackingSolution) > 0:
-                    for i in range(0, len(smallestIsolatedBoundary)):
-                        isMine = True
-                        isSafe = True
-                        for sol in self.backtrackingSolution:
-                            if not sol[i]:
-                                isMine = False
-                            if sol[i]:
-                                isSafe = False
-                        b = smallestIsolatedBoundary[i]
-                        if isMine:
-                            self.cells[b[0]][b[1]].isMine = True
-                            self.minesRemaining = self.minesRemaining - 1
-                            return Action(AI.Action.FLAG, b[1], b[0])
-                        elif isSafe:
-                            self.cells[b[0]][b[1]].isSafe = True
-                            self.safeCells.append((b[0], b[1]))
-                            return Action(AI.Action.UNCOVER, b[1], b[0])
-                    # for bc in self.backtrackingSolution:
-                    #     if bc.cell_state == CellState.COVERED:
-                    #         if bc.isMine:
-                    #             self.cells[bc.xPos][bc.yPos].isMine = True
-                    #             return Action(AI.Action.FLAG, bc.yPos, bc.xPos)
-                    #         elif bc.isSafe:
-                    #             self.cells[bc.xPos][bc.yPos].isSafe = True
-                    #             self.safeCells.append((bc.xPos, bc.yPos))
-                    #             return Action(AI.Action.UNCOVER, bc.yPos, bc.xPos)
-                # for smallestIsolatedBoundary in isolatedBoundarys:
+            # smallestIsolatedBoundary = self.getSmallestIsolatedBoundary(
+            #     isolatedBoundarys)
+            isolatedBoundarys.sort(key=len)
+            solutionFound = False
+            while not solutionFound:
+                for smallestIsolatedBoundary in isolatedBoundarys:
+                    if len(smallestIsolatedBoundary) < 13:
+                        self.cellsCopy = copy.deepcopy(self.cells)
+                        self.backtrackingSolution = []
+                        self.backtrackingAlgorithm(smallestIsolatedBoundary, 0)
+                        if self.backtrackingSolution and len(self.backtrackingSolution) > 0:
+                            for i in range(0, len(smallestIsolatedBoundary)):
+                                isMine = True
+                                isSafe = True
+                                for sol in self.backtrackingSolution:
+                                    if not sol[i]:
+                                        isMine = False
+                                    if sol[i]:
+                                        isSafe = False
+                                b = smallestIsolatedBoundary[i]
+                                if isMine:
+                                    self.cells[b[0]][b[1]].isMine = True
+                                    self.minesRemaining = self.minesRemaining - 1
+                                    self.lastX = b[0]
+                                    self.lastY = b[1]
+                                    solutionFound = True
+                                    return Action(AI.Action.FLAG, b[1], b[0])
+                                elif isSafe:
+                                    self.cells[b[0]][b[1]].isSafe = True
+                                    self.safeCells.append((b[0], b[1]))
+                                    self.lastX = b[0]
+                                    self.lastY = b[1]
+                                    solutionFound = True
+                                    return Action(AI.Action.UNCOVER, b[1], b[0])
+                            # for bc in self.backtrackingSolution:
+                            #     if bc.cell_state == CellState.COVERED:
+                            #         if bc.isMine:
+                            #             self.cells[bc.xPos][bc.yPos].isMine = True
+                            #             return Action(AI.Action.FLAG, bc.yPos, bc.xPos)
+                            #         elif bc.isSafe:
+                            #             self.cells[bc.xPos][bc.yPos].isSafe = True
+                            #             self.safeCells.append((bc.xPos, bc.yPos))
+                            #             return Action(AI.Action.UNCOVER, bc.yPos, bc.xPos)
+                    else:
+                        solutionFound = True
+                        break
+                solutionFound = True
+                break
+                        # for smallestIsolatedBoundary in isolatedBoundarys:
 
         if self.cellsRemaining > len(self.exploredCells) and self.minesRemaining > number:
             currMinePercept = 0 if number == -1 else number

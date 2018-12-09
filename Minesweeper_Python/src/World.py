@@ -99,12 +99,13 @@ class World():
                 action = self.__ai.getAction(self.__perceptNumber)
                 if self.__checkValidAction(action):
                     if self.__doMove(action):
+                        self.__printWorld()
                         break
             except ValueError:
                 print("Error: Invalid action!")
             except IndexError:
                 print("Error: Move is out of bounds!")
-            # self.__printWorld()
+            self.__printWorld()
 
             if self.__debug and type(self.__ai) != ManualAI:
                 input("Press ENTER to continue...")
