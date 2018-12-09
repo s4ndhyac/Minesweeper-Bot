@@ -74,7 +74,10 @@ class MyAI(AI):
                 if self.cells[i][j].cell_state == CellState.FLAGGED:
                     adj_f_cells.append((i, j))
                 if self.cells[i][j].cell_state == CellState.UNCOVERED:
-                    adj_u_cells.append((i, j))
+                    if i == xPos and j == yPos:
+                        continue
+                    else:
+                        adj_u_cells.append((i, j))
         return (adj_c_cells, adj_f_cells, adj_u_cells)
 
     def decideAction(self):
@@ -123,6 +126,9 @@ class MyAI(AI):
                                     self.cells[uc[0]][uc[1]].isSafe = True
                                     self.safeCells.append(uc)
                                     changed = True
+                                    self.lastX = uc[0]
+                                    self.lastY = uc[1]
+                                    return Action(AI.Action.UNCOVER, uc[1], uc[0])
                         elif adjPercept - percept == len(nAdjFlagged) - len(adjFlagged):
                             # Flag all cells unique to 2nd cell
                             for uc in nAdjCovered:
@@ -130,7 +136,10 @@ class MyAI(AI):
                                     self.cells[uc[0]][uc[1]].isMine = True
                                     self.minesRemaining = self.minesRemaining - 1
                                     changed = True
-        return changed
+                                    self.lastX = uc[0]
+                                    self.lastY = uc[1]
+                                    return Action(AI.Action.FLAG, uc[1], uc[0])
+        return None
 
     def getAction(self, number: int) -> "Action Object":
 
@@ -208,19 +217,23 @@ class MyAI(AI):
                     self.lastY = yPos
                     return Action(AI.Action.UNCOVER, yPos, xPos)
 
-        if self.solveInPairs():
-            if self.safeCells and len(self.safeCells) > 0:
-                for xPos, yPos in self.safeCells:
-                    if self.cells[xPos][yPos].cell_state == CellState.COVERED:
-                        self.lastX = xPos
-                        self.lastY = yPos
-                        return Action(AI.Action.UNCOVER, yPos, xPos)
-            for cellRow in self.cells:
-                for cell in cellRow:
-                    if cell.cell_state == CellState.COVERED and cell.isMine:
-                        self.lastX = cell.xPos
-                        self.lastY = cell.yPos
-                        return Action(AI.Action.FLAG, cell.yPos, cell.xPos)
+        # if self.solveInPairs():
+        #     if self.safeCells and len(self.safeCells) > 0:
+        #         for xPos, yPos in self.safeCells:
+        #             if self.cells[xPos][yPos].cell_state == CellState.COVERED:
+        #                 self.lastX = xPos
+        #                 self.lastY = yPos
+        #                 return Action(AI.Action.UNCOVER, yPos, xPos)
+        #     for cellRow in self.cells:
+        #         for cell in cellRow:
+        #             if cell.cell_state == CellState.COVERED and cell.isMine:
+        #                 self.lastX = cell.xPos
+        #                 self.lastY = cell.yPos
+        #                 return Action(AI.Action.FLAG, cell.yPos, cell.xPos)
+
+        action = self.solveInPairs()
+        if action:
+            return action
 
         if self.cellsRemaining > len(self.exploredCells) and self.minesRemaining > number:
             currMinePercept = 0 if number == -1 else number
