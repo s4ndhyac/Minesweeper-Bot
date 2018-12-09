@@ -158,16 +158,16 @@ class MyAI(AI):
             regions.append(region)
         return regions
 
-    # def getSmallestIsolatedBoundary(self, regions):
-    #     '''Get smallest isolated boundary region'''
-    #     minLen = 481
-    #     minReg = []
-    #     for region in regions:
-    #         l = len(region)
-    #         if l < minLen:
-    #             minLen = l
-    #             minReg = region
-    #     return minReg
+    def getSmallestIsolatedBoundary(self, regions):
+        '''Get sorted isolated boundary region by size'''
+        minLen = 481
+        minReg = []
+        for region in regions:
+            l = len(region)
+            if l < minLen:
+                minLen = l
+                minReg = region
+        return minReg
 
     def backtrackingAlgorithm(self, borderCells, position):
         '''Take the smallest possible area that can be considered in isolation
@@ -191,14 +191,21 @@ class MyAI(AI):
         if position == len(borderCells):
             if not self.backtrackOverAllOrOnlyBoundary and (flagCount < self.totalMines):
                 return
+            sol = []
             for b in borderCells:
-                if self.cellsCopy[b[0]][b[1]].cell_state == CellState.COVERED and (self.cellsCopy[b[0]][b[1]].isMine or self.cellsCopy[b[0]][b[1]].isSafe):
-                    self.backtrackingSolution.append(b)
+                sol.append(self.cellsCopy[b[0]][b[1]].isMine)
+                # bc = copy.deepcopy(self.cellsCopy[b[0]][b[1]])
+                # if bc.cell_state == CellState.COVERED and (bc.isMine or bc.isSafe):
+            self.backtrackingSolution.append(sol)
+            # self.backtrackingSolution.append(bc)
             return
         bl = borderCells[position]
+        # if len(self.backtrackingSolution) == 0:
         self.cellsCopy[bl[0]][bl[1]].isMine = True
         self.backtrackingAlgorithm(borderCells, position+1)
         self.cellsCopy[bl[0]][bl[1]].isMine = False
+
+        # if len(self.backtrackingSolution) == 0:
         self.cellsCopy[bl[0]][bl[1]].isSafe = True
         self.backtrackingAlgorithm(borderCells, position + 1)
         self.cellsCopy[bl[0]][bl[1]].isSafe = False
@@ -287,20 +294,41 @@ class MyAI(AI):
             boundaryList = coveredList
         if len(boundaryList) > 0:
             isolatedBoundarys = self.getIsolatedBoundarys(boundaryList)
-            for smallestIsolatedBoundary in isolatedBoundarys:
+            smallestIsolatedBoundary = self.getSmallestIsolatedBoundary(
+                isolatedBoundarys)
+            # isolatedBoundarys.sort(key=len)
+            if len(smallestIsolatedBoundary) < 8:
                 self.cellsCopy = copy.deepcopy(self.cells)
                 self.backtrackingSolution = []
                 self.backtrackingAlgorithm(smallestIsolatedBoundary, 0)
                 if self.backtrackingSolution and len(self.backtrackingSolution) > 0:
-                    for b in self.backtrackingSolution:
-                        if self.cellsCopy[b[0]][b[1]].cell_state == CellState.COVERED:
-                            if self.cellsCopy[b[0]][b[1]].isMine:
-                                self.cells[b[0]][b[1]].isMine = True
-                                return Action(AI.Action.FLAG, b[1], b[0])
-                            elif self.cellsCopy[b[0]][b[1]].isSafe:
-                                self.cells[b[0]][b[1]].isSafe = True
-                                self.safeCells.append((b[0], b[1]))
-                                return Action(AI.Action.UNCOVER, b[1], b[0])
+                    for i in range(0, len(smallestIsolatedBoundary)):
+                        isMine = True
+                        isSafe = True
+                        for sol in self.backtrackingSolution:
+                            if not sol[i]:
+                                isMine = False
+                            if sol[i]:
+                                isSafe = False
+                        b = smallestIsolatedBoundary[i]
+                        if isMine:
+                            self.cells[b[0]][b[1]].isMine = True
+                            self.minesRemaining = self.minesRemaining - 1
+                            return Action(AI.Action.FLAG, b[1], b[0])
+                        elif isSafe:
+                            self.cells[b[0]][b[1]].isSafe = True
+                            self.safeCells.append((b[0], b[1]))
+                            return Action(AI.Action.UNCOVER, b[1], b[0])
+                    # for bc in self.backtrackingSolution:
+                    #     if bc.cell_state == CellState.COVERED:
+                    #         if bc.isMine:
+                    #             self.cells[bc.xPos][bc.yPos].isMine = True
+                    #             return Action(AI.Action.FLAG, bc.yPos, bc.xPos)
+                    #         elif bc.isSafe:
+                    #             self.cells[bc.xPos][bc.yPos].isSafe = True
+                    #             self.safeCells.append((bc.xPos, bc.yPos))
+                    #             return Action(AI.Action.UNCOVER, bc.yPos, bc.xPos)
+                # for smallestIsolatedBoundary in isolatedBoundarys:
 
         if self.cellsRemaining > len(self.exploredCells) and self.minesRemaining > number:
             currMinePercept = 0 if number == -1 else number

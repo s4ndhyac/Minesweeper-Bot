@@ -104,7 +104,7 @@ class World():
                 print("Error: Invalid action!")
             except IndexError:
                 print("Error: Move is out of bounds!")
-            self.__printWorld()
+            # self.__printWorld()
 
             if self.__debug and type(self.__ai) != ManualAI:
                 input("Press ENTER to continue...")
