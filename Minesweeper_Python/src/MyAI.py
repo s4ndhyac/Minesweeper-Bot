@@ -133,10 +133,6 @@ class MyAI(AI):
                         self.cells[xPos][yPos].isMine = True
                         self.minequeue.append((xPos,yPos))
                         self.minesRemaining = self.minesRemaining - 1
-        for x,y in self.uncoveredCells:
-            cellAdjCoveredCells, cellAdjFlagged = self.get_adj_cells(x, y)
-            cellAdjFlaggedNum = len(cellAdjFlagged)
-            cellAdjCoveredCellsNum = len(cellAdjCoveredCells)
             if self.cells[x][y].percept == cellAdjFlaggedNum:
                 for xPos,yPos in cellAdjCoveredCells:
                     if not self.cells[xPos][yPos].isSafe:
