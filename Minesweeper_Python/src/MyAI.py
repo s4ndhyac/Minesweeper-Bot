@@ -17,7 +17,7 @@ from Action import Action
 from enum import Enum
 import queue
 import copy
-
+count = 0
 
 class Cell:
     def __init__(self, cell_state, percept, mine_probability, xPos, yPos):
@@ -174,6 +174,9 @@ class MyAI(AI):
           Make a guess and keep moving forward until you reach a contradiction
           If you reach a contradiction then eliminate that assumption and try another
           till you reach a case that solves without contradiction'''
+        global count
+        #count += 1
+        #print(count)
         flagCount = 0
         for cellRow in self.cellsCopy:
             for cell in cellRow:
@@ -287,10 +290,28 @@ class MyAI(AI):
             boundaryList = coveredList
         if len(boundaryList) > 0:
             isolatedBoundarys = self.getIsolatedBoundarys(boundaryList)
+            isolatedBoundarys.sort(key=len)
+            #new_isolated_boundarys = []
+            #for boundary_list in isolatedBoundarys:
+            #    new_list = []
+            #    if len(boundary_list) > 10:
+            #        new_list.append(boundary_list[0:10])
+            #        new_list.append(boundary_list[10:len(boundary_list)])
+            #        new_isolated_boundarys.append(new_list[0])
+            #        new_isolated_boundarys.append(new_list[1])
+            #    else:
+            #        new_isolated_boundarys.append(boundary_list)
+            ##for it in new_isolated_boundarys:
+            ##    print(len(it))
+            ##import sys
+            ##sys.exit()
             for smallestIsolatedBoundary in isolatedBoundarys:
+                if len(smallestIsolatedBoundary) > 8:
+                    continue
                 self.cellsCopy = copy.deepcopy(self.cells)
                 self.backtrackingSolution = []
                 self.backtrackingAlgorithm(smallestIsolatedBoundary, 0)
+                count = 0
                 if self.backtrackingSolution and len(self.backtrackingSolution) > 0:
                     for b in self.backtrackingSolution:
                         if self.cellsCopy[b[0]][b[1]].cell_state == CellState.COVERED:
