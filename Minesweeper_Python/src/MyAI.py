@@ -180,6 +180,42 @@ class MyAI(AI):
                             ret_opens.add(element)
         return (ret_flags, ret_opens)
 
+    def solveInPairs(self):
+        changed = False
+        # For each open cell (x,y)
+        for cellRow in self.cells:
+            for cell in cellRow:
+                if cell.cell_state == CellState.UNCOVERED:
+                    percept = cell.percept
+                    adjCovered, adjFlagged, adjUncovered = self.get_adj_cells(self.cells,
+                                                                              cell.xPos, cell.yPos, self.rowDimension, self.colDimension)
+                    if len(adjCovered) == 0:
+                        continue
+                    percept = percept - len(adjFlagged)
+                    # for each neighbour which is open
+                    for x, y in adjUncovered:
+                        if x == cell.xPos or y == cell.yPos:
+                            adjPercept = self.cells[x][y].percept
+                            # get neighbours to adj cell
+                            nAdjCovered, nAdjFlagged, nAdjUncovered = self.get_adj_cells(self.cells,
+                                                                                         x, y, self.rowDimension, self.colDimension)
+                            adjPercept = adjPercept - len(nAdjFlagged)
+                            # check if each unopened neighbour of first cell is a neighbour of 2nd cell
+                            for c in adjCovered:
+                                if c not in nAdjCovered:
+                                    break
+                            # Open all cells unique to the neighbour
+                            if adjPercept == percept:
+                                for uc in nAdjCovered:
+                                    if uc not in adjCovered:
+                                        self.cells[uc[0]][uc[1]].isSafe = True
+                                        self.safeCells.append(uc)
+                                        changed = True
+                                        self.lastX = uc[0]
+                                        self.lastY = uc[1]
+                                        return Action(AI.Action.UNCOVER, uc[1], uc[0])
+        return None
+
     def getAction(self, number: int) -> "Action Object":
         self.cells[self.lastX][self.lastY].percept = number
         if number == -1:
@@ -256,36 +292,38 @@ class MyAI(AI):
                     self.lastY = yPos
                     return Action(AI.Action.UNCOVER, yPos, xPos)
 
-        to_flag, to_open = self.trivial(self.cells)
-
-        for cellRow in self.cells:
-            for cell in cellRow:
-                self.cellsCopy = copy.deepcopy(self.cells)
-                cell_flags, cell_opens = self.nonTrivial(cell, self.cellsCopy)
-                to_flag = to_flag | cell_flags
-                to_open = to_open | cell_opens
-                if to_flag:
-                    for c in to_flag:
-                        self.cells[c[0]][c[1]].isMine = True
-                        self.minesRemaining = self.minesRemaining - 1
-                if to_open:
-                    for c in to_open:
-                        self.cells[c[0]][c[1]].isSafe = True
-                        self.safeCells.append((c[0], c[1]))
-
-        if self.safeCells and len(self.safeCells) > 0:
-            for xPos, yPos in self.safeCells:
-                if self.cells[xPos][yPos].cell_state == CellState.COVERED:
-                    self.lastX = xPos
-                    self.lastY = yPos
-                    return Action(AI.Action.UNCOVER, yPos, xPos)
-
-        for cellRow in self.cells:
-            for cell in cellRow:
-                if cell.cell_state == CellState.COVERED and cell.isMine:
-                    self.lastX = cell.xPos
-                    self.lastY = cell.yPos
-                    return Action(AI.Action.FLAG, cell.yPos, cell.xPos)
+        if self.cellsRemaining == 480:
+            action = self.solveInPairs()
+            if action:
+                return action
+            to_flag, to_open = self.trivial(self.cells)
+            for cellRow in self.cells:
+                for cell in cellRow:
+                    self.cellsCopy = copy.deepcopy(self.cells)
+                    cell_flags, cell_opens = self.nonTrivial(
+                        cell, self.cellsCopy)
+                    to_flag = to_flag | cell_flags
+                    to_open = to_open | cell_opens
+                    if to_flag:
+                        for c in to_flag:
+                            self.cells[c[0]][c[1]].isMine = True
+                            self.minesRemaining = self.minesRemaining - 1
+                    if to_open:
+                        for c in to_open:
+                            self.cells[c[0]][c[1]].isSafe = True
+                            self.safeCells.append((c[0], c[1]))
+            if self.safeCells and len(self.safeCells) > 0:
+                for xPos, yPos in self.safeCells:
+                    if self.cells[xPos][yPos].cell_state == CellState.COVERED:
+                        self.lastX = xPos
+                        self.lastY = yPos
+                        return Action(AI.Action.UNCOVER, yPos, xPos)
+            for cellRow in self.cells:
+                for cell in cellRow:
+                    if cell.cell_state == CellState.COVERED and cell.isMine:
+                        self.lastX = cell.xPos
+                        self.lastY = cell.yPos
+                        return Action(AI.Action.FLAG, cell.yPos, cell.xPos)
 
         if self.cellsRemaining > len(self.exploredCells) and self.minesRemaining > number:
             currMinePercept = 0 if number == -1 else number
