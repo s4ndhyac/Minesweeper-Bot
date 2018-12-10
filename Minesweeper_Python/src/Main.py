@@ -126,8 +126,6 @@ def main():
 
                     numScores += 1
                     sumScores += score
-                    print("world: " + str(numScores) +
-                          " score: " + str(scoreExp) + " " + f)
 
             print("---------------Your agent's results:---------------")
             print("Beginner: {} \tIntermediate: {} \tExpert: {}".format(

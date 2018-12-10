@@ -340,7 +340,6 @@ class MyAI(AI):
 
         action = self.solveInPairs()
         if action:
-            print("In pair: " + str(action.getX()) + " " + str(action.getY()))
             return action
 
         boundaryList, coveredList = self.getBoundaryCells()
