@@ -1,8 +1,11 @@
 #!/bin/bash
 
-rm -rf Problems
-mkdir Problems
 cd Problems
+
+rm -rf Beginner
+rm -rf Intermediate
+rm -rf Expert
+
 mkdir Beginner
 mkdir Intermediate
 mkdir Expert
