@@ -14,13 +14,13 @@ If we find the 1-1 pattern then we UNCOVER the 3rd cell adjacent to it. Similarl
 
 - Rule 5: Finally in the worst case, when we don’t get any results even from the backtracking algorithm, we resort to the following probabilistic method:
 
-a.) If the last cell was UNCOVERED -> then for each cell adjacent to it, the probability of a mine being present in it is = (percept number / no. of adjacent covered cells)
+...* If the last cell was UNCOVERED -> then for each cell adjacent to it, the probability of a mine being present in it is = (percept number / no. of adjacent covered cells)
 
-b.) If the last cell was FLAGGED -> the probability of a mine being present on it is 1 
+...* If the last cell was FLAGGED -> the probability of a mine being present on it is 1 
 
-c.) The probability of a mine in all remaining covered cells is = (mines left/ cells left)
+...* The probability of a mine in all remaining covered cells is = (mines left/ cells left)
 
-d.) The cell with the minimum/least mine probability is UNCOVERED
+...* The cell with the minimum/least mine probability is UNCOVERED
 
 
 ### Performance
